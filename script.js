@@ -1,3 +1,5 @@
+const board = document.querySelector(".board");
+
 
 function newGame(){
     let gameBoard = [
@@ -75,6 +77,25 @@ function newPlayer(name) {
 }
 
 console.table(newGame().getGameBoard());
+
+// Render game on load 
+
+function renderGame() {
+    let gameBoard = game.getGameBoard();
+
+    for (let i = 0; i <= 2; i++) {
+        for (let j = 0; j <= 2; j++) {
+            const cell = document.createElement("button");
+            cell.classList.add("cell");
+            cell.dataset.row = i;
+            cell.dataset.column = j;
+            cell.textContent = gameBoard[i][j];
+            board.appendChild(cell);
+        }
+    }   
+}   
+
+renderGame();
 
 const playerOne = newPlayer("Player One");
 const playerTow = newPlayer("Player Two");
