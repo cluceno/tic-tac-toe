@@ -1,7 +1,12 @@
 const board = document.querySelector(".board");
+const gameStatus = document.querySelector(".gameStatus");
+const reset = document.querySelector(".reset");
+const dialog = document.querySelector(".names-dialog");
+const form = dialog.querySelector("form");
+const p1Input = document.querySelector("#p1-name");
+const p2Input = document.querySelector("#p2-name");
 
-
-function newGame(){
+function newGame(playerOne, playerTwo){
     let gameBoard = [
         ["", "", ""],
         ["", "", ""],
@@ -29,10 +34,11 @@ function newGame(){
             const third = gameBoard[line[2][0]][line[2][1]];
 
             if (first !== "" && first === second && second === third) {
-                console.log(`${first} is the winner`)
                 winner = true;
-                return first; //X or O 
-            }
+                const winnerName = first === "X"? playerOne.name : playerTwo.name;
+                gameStatus.textContent = `${winnerName} is the winner`;
+                return first;
+            } 
         }
         return null;
     }
@@ -43,22 +49,16 @@ function newGame(){
         //check if the spot is already taken 
         if (gameBoard[x][y] !== "") return;
 
-        if (moveCounter % 2) {
-            moveCounter++;
-            gameBoard[x][y] = "O";
-            console.table(gameBoard);
-            checkWinner();
+        const mark = moveCounter % 2 === 0? "X" : "0";
+        gameBoard[x][y] = mark;
+        moveCounter++;
 
-        } else {
-            moveCounter++;
-            gameBoard[x][y] = "X";
-            console.table(gameBoard);
-            checkWinner();
-        }
+        checkWinner();
         
         //check if there is a tie
-        if (moveCounter >= 9 && winner === false) return console.log("It's a tie!");
-
+        if (moveCounter >= 9 && winner === false) {
+            gameStatus.textContent = "It's a tie!"
+        }
     }
 
     const getGameBoard = () => gameBoard;
@@ -68,15 +68,6 @@ function newGame(){
         setGameBoard,
     }
 }
-
-function newPlayer(name) {
-
-    return {
-        name: name,
-    }
-}
-
-console.table(newGame().getGameBoard());
 
 // Render game on load 
 
@@ -95,9 +86,54 @@ function renderGame() {
     }   
 }   
 
-renderGame();
+// Make grid buttons playable 
 
-const playerOne = newPlayer("Player One");
-const playerTow = newPlayer("Player Two");
+board.addEventListener("click", (e) => {
+    if (e.target.tagName !== "BUTTON") return;
+    board.textContent = "";
 
-console.log(playerOne.name);
+    const row = Number(e.target.dataset.row);
+    const col = Number(e.target.dataset.column);
+
+    game.setGameBoard(row, col);
+    renderGame();
+})
+
+// Configure buttons
+
+let game;
+let playerOne;
+let playerTwo;
+
+function newPlayer(name) {
+
+    return {
+        name: name,
+    }
+}
+
+reset.addEventListener("click", () => {
+    if (reset.textContent === "Start") {
+        dialog.showModal();
+    } else {
+        // Clear board and rerender
+        board.textContent = "";
+        game = newGame(playerOne, playerTwo);
+        renderGame();
+
+        gameStatus.textContent = "";
+    }
+})
+
+form.addEventListener("submit", () => {
+    playerOne = newPlayer(p1Input.value);
+    playerTwo = newPlayer(p2Input.value);
+
+    game = newGame(playerOne, playerTwo);
+    gameStatus.textContent = "";
+    renderGame();
+
+    reset.textContent = "Reset";
+    form.reset();
+})
+

@@ -3,16 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Tic-Tac-Toe</title>
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
 </head>
 <body>
     
-    <div class="board">
+    <div class="board"></div>
+    <div class="gameStatus"></div>
+    <button class="reset">Start</button>
 
-    </div>
-
+    <dialog class="names-dialog">
+        <form method="dialog">
+            <label>Player 1 <input id="p1-name" required></label>
+            <label>Player 2 <input id="p2-name" required></label>
+            <button type="submit">Start game</button>
+        </form>
+    </dialog>
 
 </body>
 </html>
