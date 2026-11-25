@@ -19,6 +19,8 @@ body {
 .cell {
     font-size: 2rem;
     transition: transform 0.1s;
+    border: none;
+    border-radius: 8px;
 }
 
 .cell:active {
