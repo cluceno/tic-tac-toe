@@ -1,17 +1,28 @@
-const board = document.querySelector(".board");
-const gameStatus = document.querySelector(".gameStatus");
-const reset = document.querySelector(".reset");
-const dialog = document.querySelector(".names-dialog");
-const form = dialog.querySelector("form");
-const p1Input = document.querySelector("#p1-name");
-const p2Input = document.querySelector("#p2-name");
 
-function newGame(playerOne, playerTwo){
-    let gameBoard = [
+
+function gameBoard() {
+    let board = [
         ["", "", ""],
         ["", "", ""],
         ["", "", ""]
     ]
+
+    const setGameBoard = (row, col, mark) => {
+        if (board[row][col] !== "") return false;
+        board[row][col] = mark;
+        return true;
+    }
+
+    const getGameBoard = () => board;
+
+    return {
+        setGameBoard,
+        getGameBoard,
+    }
+}
+
+function controller(playerOne, playerTwo) {
+    const board = gameBoard();
 
     let moveCounter = 0;
     let winner = false;
@@ -27,113 +38,130 @@ function newGame(playerOne, playerTwo){
         [[0, 2], [1, 1], [2, 0]], // Diagonal to bottom left
     ];
 
+    const placeMark = (row, col) => {
+        // 1. Game already over?
+        if (winner || moveCounter >= 9) return {result: "invalid"};
+
+        // 2. Try to place the mark
+        const mark = moveCounter % 2 === 0? "X" : "O";
+        const move = board.setGameBoard(row, col, mark);
+        if (!move) return {result: "invalid"};
+
+        moveCounter++;
+
+        // 3. Did that move win? 
+        const winningMark = checkWinner();
+        if (winningMark) {
+            winner = true;
+            const winnerName = winningMark === "X"? playerOne.name : playerTwo.name;
+            return {result: "win", winnerName: winnerName};
+        }
+
+        // 4. Board full with no winner? 
+        if (moveCounter === 9) return {result: "tie"};
+
+        // 5. Game continues
+        return {result: "next"};
+    }
+
     const checkWinner = () => {
+        const current = board.getGameBoard();
+
         for (const line of winningScenarios) {
-            const first = gameBoard[line[0][0]][line[0][1]];
-            const second = gameBoard[line[1][0]][line[1][1]];
-            const third = gameBoard[line[2][0]][line[2][1]];
+            const first = current[line[0][0]][line[0][1]];
+            const second = current[line[1][0]][line[1][1]];
+            const third = current[line[2][0]][line[2][1]];
 
             if (first !== "" && first === second && second === third) {
-                winner = true;
-                const winnerName = first === "X"? playerOne.name : playerTwo.name;
-                gameStatus.textContent = `${winnerName} is the winner`;
                 return first;
             } 
         }
         return null;
     }
 
-    const setGameBoard = (x, y) => {
-        //check if there is a winner or if there is a tie
-        if (winner === true || moveCounter >= 9) return;
-        //check if the spot is already taken 
-        if (gameBoard[x][y] !== "") return;
-
-        const mark = moveCounter % 2 === 0? "X" : "0";
-        gameBoard[x][y] = mark;
-        moveCounter++;
-
-        checkWinner();
-        
-        //check if there is a tie
-        if (moveCounter >= 9 && winner === false) {
-            gameStatus.textContent = "It's a tie!"
-        }
-    }
-
-    const getGameBoard = () => gameBoard;
-
     return {
-        getGameBoard,
-        setGameBoard,
+        placeMark,
+        getBoard: () => board.getGameBoard(),
     }
+
 }
-
-// Render game on load 
-
-function renderGame() {
-    let gameBoard = game.getGameBoard();
-
-    for (let i = 0; i <= 2; i++) {
-        for (let j = 0; j <= 2; j++) {
-            const cell = document.createElement("button");
-            cell.classList.add("cell");
-            cell.dataset.row = i;
-            cell.dataset.column = j;
-            cell.textContent = gameBoard[i][j];
-            board.appendChild(cell);
-        }
-    }   
-}   
-
-// Make grid buttons playable 
-
-board.addEventListener("click", (e) => {
-    if (e.target.tagName !== "BUTTON") return;
-    board.textContent = "";
-
-    const row = Number(e.target.dataset.row);
-    const col = Number(e.target.dataset.column);
-
-    game.setGameBoard(row, col);
-    renderGame();
-})
-
-// Configure buttons
-
-let game;
-let playerOne;
-let playerTwo;
 
 function newPlayer(name) {
-
-    return {
-        name: name,
-    }
+  return { name: name };
 }
 
-reset.addEventListener("click", () => {
-    if (reset.textContent === "Start") {
-        dialog.showModal();
-    } else {
-        // Clear board and rerender
-        board.textContent = "";
-        game = newGame(playerOne, playerTwo);
-        renderGame();
+const displayController = (function () {
+  const board = document.querySelector(".board");
+  const gameStatus = document.querySelector(".gameStatus");
+  const reset = document.querySelector(".reset");
+  const dialog = document.querySelector(".names-dialog");
+  const form = dialog.querySelector("form");
+  const p1Input = document.querySelector("#p1-name");
+  const p2Input = document.querySelector("#p2-name");
 
-        gameStatus.textContent = "";
+  let game;
+  let playerOne;
+  let playerTwo;
+
+  function renderGame() {
+    board.textContent = ""; // clear the old buttons first
+
+    const gameBoard = game.getBoard(); // read from the stored controller
+
+    for (let i = 0; i <= 2; i++) {
+      for (let j = 0; j <= 2; j++) {
+        const cell = document.createElement("button");
+        cell.classList.add("cell");
+        cell.dataset.row = i;
+        cell.dataset.column = j;
+        cell.textContent = gameBoard[i][j];
+        board.appendChild(cell);
+      }
     }
-})
+  }
 
-form.addEventListener("submit", () => {
-    playerOne = newPlayer(p1Input.value);
-    playerTwo = newPlayer(p2Input.value);
+    function showResult(outcome) {
+        if (outcome.result === "win") {
+            gameStatus.textContent = `${outcome.winnerName} is the winner`;
+        } else if (outcome.result === "tie") {
+            gameStatus.textContent = "It's a tie!";
+        }
+  // "next" and "invalid": nothing to announce
+    }
 
-    game = newGame(playerOne, playerTwo);
-    gameStatus.textContent = "";
-    renderGame();
+  // listeners go here
 
-    reset.textContent = "Reset";
-    form.reset();
-})
+    board.addEventListener("click", (e) => {
+        if (e.target.tagName !== "BUTTON") return;
 
+        const row = Number(e.target.dataset.row);
+        const col = Number(e.target.dataset.column);
+
+        const outcome = game.placeMark(row, col);
+        renderGame();
+        showResult(outcome);
+    });
+
+    function startGame() {
+        game = controller(playerOne, playerTwo);
+        gameStatus.textContent = "";
+        renderGame();
+    }
+
+    reset.addEventListener("click", () => {
+        if (reset.textContent === "Start") {
+            dialog.showModal();
+        } else {
+            startGame();
+        }
+    });
+
+    form.addEventListener("submit", () => {
+        playerOne = newPlayer(p1Input.value);
+        playerTwo = newPlayer(p2Input.value);
+        startGame();
+        reset.textContent = "Reset";
+        form.reset();
+    });
+
+})();
